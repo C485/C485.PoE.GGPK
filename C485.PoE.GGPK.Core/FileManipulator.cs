@@ -100,7 +100,7 @@ namespace C485.PoE.GGPK.Core
             _root = GetTreeWithRoot();
         }
 
-        private static PackType GetPackType(ref byte[] data)
+        private static PackType GetPackType(byte[] data)
         {
             if (data[4] == 'F' && data[5] == 'I' && data[6] == 'L' && data[7] == 'E')
                 return PackType.File;
@@ -111,6 +111,13 @@ namespace C485.PoE.GGPK.Core
             if (data[4] == 'P' && data[5] == 'D' && data[6] == 'I' && data[7] == 'R')
                 return PackType.PDir;
             throw new Exception($"Unknown PackType[{Encoding.ASCII.GetString(data, 4, 4)}]");
+        }
+
+        private static void ParseHeaderData(BinaryReader binReader, int sizeOfHeader, out PackType packType, out uint dataLength)
+        {
+            byte[] headerData = binReader.ReadBytes(sizeOfHeader);
+            dataLength = BitConverter.ToUInt32(headerData);
+            packType = GetPackType(headerData);
         }
 
         private List<FilePointer> GetFiles(List<long> fileOffsets)
@@ -189,13 +196,6 @@ namespace C485.PoE.GGPK.Core
                     });
                 }
             }
-        }
-
-        private void ParseHeaderData(BinaryReader binReader, int sizeOfHeader, out PackType packType, out uint dataLength)
-        {
-            byte[] headerData = binReader.ReadBytes(sizeOfHeader);
-            dataLength = BitConverter.ToUInt32(headerData);
-            packType = GetPackType(ref headerData);
         }
 
         private void ParsePDir(BinaryReader binReader, uint dataLength, long fileOffset, long dataOffset)
