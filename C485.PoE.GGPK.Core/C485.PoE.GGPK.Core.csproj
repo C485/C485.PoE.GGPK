@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netcoreapp2.2</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\C485.PoE.GGPK.Base\C485.PoE.GGPK.Base.csproj" />
+  </ItemGroup>
+
+</Project>
