@@ -122,6 +122,23 @@ namespace C485.PoE.GGPK.Core
             _root = GetTreeWithRoot();
         }
 
+        private static void CheckForDds(BinaryReader binReader, FilePointer fp, uint fileDataSize)
+        {
+            if (fp.FileType == FileType.DdsCompressed)
+            {
+                byte[] cntBytes = binReader.ReadBytes(4);
+                if (cntBytes[0] == '*')
+                    fp.FileType = FileType.DdsLookup;
+                else if (cntBytes[0] == 'D' && cntBytes[1] == 'D' && cntBytes[2] == 'S' && cntBytes[3] == ' ') //MagicNumber 0x20534444 ("DDS ")
+                    fp.FileType = FileType.DdsUncompressed;
+                binReader.SkipBytes(fileDataSize - 4);
+            }
+            else
+            {
+                binReader.SkipBytes(fileDataSize);
+            }
+        }
+
         private static PackType GetPackType(byte[] data)
         {
             if (data[4] == 'F' && data[5] == 'I' && data[6] == 'L' && data[7] == 'E')
@@ -215,19 +232,7 @@ namespace C485.PoE.GGPK.Core
                         FileSize = fileDataSize,
                         FileDataOffset = fileDataOffset
                     };
-                    if (fp.FileType == FileType.DdsCompressed)
-                    {
-                        byte[] cntBytes = binReader.ReadBytes(4);
-                        if (cntBytes[0] == '*')
-                            fp.FileType = FileType.DdsLookup;
-                        else if (cntBytes[0] == 'D' && cntBytes[1] == 'D' && cntBytes[2] == 'S' && cntBytes[3] == ' ') //MagicNumber 0x20534444 ("DDS ")
-                            fp.FileType = FileType.DdsUncompressed;
-                        binReader.SkipBytes(fileDataSize - 4);
-                    }
-                    else
-                    {
-                        binReader.SkipBytes(fileDataSize);
-                    }
+                    CheckForDds(binReader, fp, fileDataSize);
                     _files.Add(fileOffset, fp);
                 }
             }
