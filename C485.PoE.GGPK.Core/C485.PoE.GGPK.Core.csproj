@@ -5,6 +5,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="BrotliSharpLib" Version="0.3.3" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\C485.PoE.GGPK.Base\C485.PoE.GGPK.Base.csproj" />
   </ItemGroup>
 

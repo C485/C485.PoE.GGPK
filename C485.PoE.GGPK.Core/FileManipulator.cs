@@ -1,4 +1,5 @@
-﻿using C485.PoE.GGPK.Base.Enums;
+﻿using BrotliSharpLib;
+using C485.PoE.GGPK.Base.Enums;
 using C485.PoE.GGPK.Base.Model;
 using C485.PoE.GGPK.Core.Extension;
 using System;
@@ -34,6 +35,26 @@ namespace C485.PoE.GGPK.Core
             _fileStream.Dispose();
         }
 
+        public IReadOnlyDictionary<long, FileDirectory> Directories
+        {
+            get
+            {
+                if (_directories == null || _directories.Count == 0)
+                    throw new Exception("MapFile was not called!");
+                return _directories;
+            }
+        }
+
+        public IReadOnlyDictionary<long, FilePointer> Files
+        {
+            get
+            {
+                if (_files == null || _files.Count == 0)
+                    throw new Exception("MapFile was not called!");
+                return _files;
+            }
+        }
+
         public FileDirectoryTree Root
         {
             get
@@ -44,7 +65,7 @@ namespace C485.PoE.GGPK.Core
             }
         }
 
-        public byte[] GetFileContentBytes(FilePointer filePointer)
+        public byte[] GetFileContentBytes(FilePointer filePointer, bool brotliDecompress = false)
         {
             //This is kind of dangerous, we can reach limit of ram
             byte[] bytes = new byte[filePointer.FileSize];
@@ -60,11 +81,12 @@ namespace C485.PoE.GGPK.Core
                         chunk = int.MaxValue;
                     bytesToRead -= chunk;
                     byte[] readBytes = binReader.ReadBytes(chunk);
+
                     Array.Copy(readBytes, 0, bytes, totalReadBytes, chunk);
                     totalReadBytes += chunk;
                 }
             }
-            return bytes;
+            return brotliDecompress ? Brotli.DecompressBuffer(bytes, 4, bytes.Length - 4) : bytes;
         }
 
         public void MapFile()
@@ -185,15 +207,28 @@ namespace C485.PoE.GGPK.Core
                     string name = Encoding.Unicode.GetString(reader.ReadBytes(2 * (nameLength - 1)));
                     reader.SkipBytes(WideZeroTerminatorSizeInBytes);
                     uint fileDataSize = dataLength - HashSizeInBytes - (uint)(2 * nameLength) - sizeof(int) - SizeOfHeader;
-                    binReader.SkipBytes(fileDataSize);
-                    _files.Add(fileOffset, new FilePointer
+                    FilePointer fp = new FilePointer
                     {
                         Name = name,
                         FilePointerDataOffset = dataOffset,
                         FilePointerOffset = fileOffset,
                         FileSize = fileDataSize,
                         FileDataOffset = fileDataOffset
-                    });
+                    };
+                    if (fp.FileType == FileType.DdsCompressed)
+                    {
+                        byte[] cntBytes = binReader.ReadBytes(4);
+                        if (cntBytes[0] == '*')
+                            fp.FileType = FileType.DdsLookup;
+                        else if (cntBytes[0] == 'D' && cntBytes[1] == 'D' && cntBytes[2] == 'S' && cntBytes[3] == ' ') //MagicNumber 0x20534444 ("DDS ")
+                            fp.FileType = FileType.DdsUncompressed;
+                        binReader.SkipBytes(fileDataSize - 4);
+                    }
+                    else
+                    {
+                        binReader.SkipBytes(fileDataSize);
+                    }
+                    _files.Add(fileOffset, fp);
                 }
             }
         }
