@@ -12,9 +12,9 @@ namespace C485.PoE.GGPK.Core.Converter
         //Nothing interesting there
         public static byte[] DdsToPng(byte[] bytes)
         {
-            if (bytes[87] == 52) //We can simply change this bit to change from D3DFMT_DXT4 to D3DFMT_DXT5, they are the same
+            if (bytes[87] == 52) //We can simply change this bit from D3DFMT_DXT4 to D3DFMT_DXT5, they are the same
                 bytes[87] = 53;
-            if (bytes[87] == 50) //We can simply change this bit to change from D3DFMT_DXT2 to D3DFMT_DXT3, they are the same
+            if (bytes[87] == 50) //We can simply change this bit from D3DFMT_DXT2 to D3DFMT_DXT3, they are the same
                 bytes[87] = 51;
 
             Dds dds = Pfim.Dds.Create(bytes, new PfimConfig());
