@@ -1,5 +1,6 @@
 ﻿using C485.PoE.GGPK.Base.Model;
 using C485.PoE.GGPK.Core;
+using C485.PoE.GGPK.Core.Converter;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -65,6 +66,21 @@ namespace C485.PoE.GGPK.Playground
             foreach (FilePointer pointer in files)
             {
                 byte[] buf = kk.GetFileContentBytes(pointer, pointer.FileType == FileType.DdsCompressed);
+                try
+                {
+                    buf = DdsConverter.DdsToPng(buf);
+                    if (!Directory.Exists(path))
+                        Directory.CreateDirectory(path);
+                    if (File.Exists(path + "/" + pointer.Name + ".png"))
+                        File.WriteAllBytes(path + "/" + (i++) + pointer.Name + ".png", buf);
+                    else
+                        File.WriteAllBytes(path + "/" + pointer.Name + ".png", buf);
+                    continue;
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine(e.Message);
+                }
                 if (!Directory.Exists(path))
                     Directory.CreateDirectory(path);
                 if (File.Exists(path + "/" + pointer.Name))
@@ -108,9 +124,9 @@ namespace C485.PoE.GGPK.Playground
 
             PrintTree(kk.Root, 0);
             //System.IO.File.AppendAllText("E:\\lol.txt", sb.ToString());
-            UnpackFirst10OfAnyExtension("E:/PoEUnpacked3_ext");
+            //UnpackFirst10OfAnyExtension("E:/PoEUnpacked3_ext");
             //FilesCountByExtension();
-            //UnpackAllDDSFiles("E:/PoEUnpacked4_ext");
+            UnpackAllDDSFiles("E:/PoEUnpacked4_ext");
         }
     }
 }
